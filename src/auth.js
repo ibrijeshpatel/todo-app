@@ -22,7 +22,7 @@ export function initAuthUI(){
   $("linkToSignUp").onclick=()=>tabs[1].click();
   $("linkToSignIn").onclick=()=>tabs[0].click();
 
-  // Sign in
+  // Sign in (email + password)
   $("btnSignIn").onclick = async ()=>{
     setBadge(statusAuth,"warn"); statusMsg.textContent="Signing in…";
     const email = $("emailSignIn").value.trim();
@@ -31,7 +31,7 @@ export function initAuthUI(){
     if (error){ setBadge(statusAuth,false); statusMsg.textContent="Sign-in error: "+error.message; alert(error.message); }
   };
 
-  // Sign up
+  // Sign up (handles both: confirm-email OFF -> auto signed in; ON -> needs email)
   $("btnSignUp").onclick = async ()=>{
     setBadge(statusAuth,"warn"); statusMsg.textContent="Creating account…";
     const email=$("emailSignUp").value.trim();
@@ -39,12 +39,32 @@ export function initAuthUI(){
     const pw2=$("passwordConfirm").value;
     if(!email||!pw) return alert("Email and password are required.");
     if(pw!==pw2) return alert("Passwords do not match.");
-    const { error } = await supabase.auth.signUp({ email, password: pw });
-    if (error){ setBadge(statusAuth,false); statusMsg.textContent="Sign-up error: "+error.message; alert(error.message); }
-    else { setBadge(statusAuth,true); statusMsg.textContent="Account created. Check your email if confirmation is required; then sign in."; alert("Account created. Check your email if confirmation is required; then sign in."); tabs[0].click(); }
+
+    const { data, error } = await supabase.auth.signUp({ email, password: pw });
+
+    if (error){
+      setBadge(statusAuth,false);
+      statusMsg.textContent="Sign-up error: "+error.message;
+      alert(error.message);
+      return;
+    }
+
+    // If confirmations are OFF, Supabase returns a session and you're already logged in.
+    if (data?.session) {
+      setBadge(statusAuth,true);
+      statusMsg.textContent = "Account created — you're signed in.";
+      // onAuthStateChange will switch the UI to the app panel automatically.
+      alert("Account created — you're signed in.");
+    } else {
+      // If confirmations are ON (or SMTP delayed), user must confirm via email first.
+      setBadge(statusAuth,true);
+      statusMsg.textContent = "Account created. Check your email to confirm, then sign in.";
+      alert("Account created. Check your email to confirm, then sign in.");
+      tabs[0].click(); // go to Sign In tab
+    }
   };
 
-  // Magic link
+  // Magic link (Email OTP)
   $("sendEmailOtp").onclick = async ()=>{
     setBadge(statusAuth,"warn"); statusMsg.textContent="Sending magic link…";
     const email = $("emailOtp").value.trim();
@@ -56,7 +76,7 @@ export function initAuthUI(){
     else { setBadge(statusAuth,true); statusMsg.textContent="Magic link sent. Check email."; alert("Magic link sent. Check your inbox/spam."); }
   };
 
-  // Resend confirmation
+  // Resend confirmation (only useful if Confirm email is ON)
   $("linkResend").onclick = async ()=>{
     const email = $("emailSignIn").value.trim() || prompt("Enter your email to resend confirmation");
     if (!email) return;
