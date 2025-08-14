@@ -107,11 +107,8 @@
 
       <div class="card">
         <div class="row" style="align-items:center">
-          <div><label>Select date</label><input id="viewDate" type="date"></div>
-          <div class="actions" style="justify-content:flex-end">
-            <button id="showDay" class="primary">Check day</button>
-            <button id="signOut" class="ghost">Sign out</button>
-          </div>
+          <div style="max-width:260px"><label>Select date</label><input id="viewDate" type="date"></div>
+          <!-- no buttons here anymore -->
         </div>
         <div class="hr"></div>
         <div id="list"></div>
@@ -120,7 +117,7 @@
   </div>
 </div>
 
-<!-- bump ?v= to force cache refresh after updates -->
-<script type="module" src="./src/main.js?v=7"></script>
+<!-- bump ?v to refresh cached JS -->
+<script type="module" src="./src/main.js?v=8"></script>
 </body>
 </html>

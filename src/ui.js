@@ -22,8 +22,7 @@ export function initAppUI(){
   $("resetBtn").onclick = resetForm;
   $("deleteBtn").onclick = onDelete;
 
-  // NEW controls: select date + "Check day"
-  $("showDay").onclick = renderList;
+  // Auto refresh list whenever the date changes
   $("viewDate").onchange = renderList;
 }
 
@@ -34,7 +33,7 @@ export async function renderList(){
     const items = await listTodosByDate($("viewDate").value);
     setBadge(statusDb, true);
     if (!items.length){
-      listEl.innerHTML = `<div class="muted">No to-dos for <b>${$("viewDate").value}</b>.</div>`;
+      listEl.innerHTML = `<div class="muted">No to-dos for the selected date.</div>`;
       return;
     }
     listEl.innerHTML = "";
