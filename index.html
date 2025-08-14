@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>To-Do (Login + Personal Lists)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">To-Do</div>
+  <div class="actions">
+    <div id="userArea" class="muted"></div>
+    <button id="resetSession" class="ghost hidden" title="Clear local session">Reset session</button>
+    <button id="headerLogout" class="ghost hidden" title="Log out">Log out</button>
+  </div>
+</header>
+
+<!-- Status / diagnostics -->
+<div class="statusbar">
+  <span class="badge" id="status-env">ENV?</span>
+  <span class="badge" id="status-auth">AUTH?</span>
+  <span class="badge" id="status-db">DB?</span>
+  <span class="muted mono" id="status-msg">Ready.</span>
+  <div class="actions" style="margin-left:auto">
+    <button id="btnSelfTest" class="ghost">Run self-test</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- AUTH PANEL -->
+  <div id="authPanel" class="card auth">
+    <div class="tabs">
+      <button class="ghost active" data-tab="signInTab">Sign In</button>
+      <button class="ghost" data-tab="signUpTab">Create Account</</button>
+      <button class="ghost" data-tab="emailOtpTab">Email OTP</button>
+    </div>
+
+    <!-- Sign In -->
+    <div id="signInTab">
+      <div class="row"><div><label>Email</label><input id="emailSignIn" type="email" placeholder="you@example.com"></div></div>
+      <div class="row"><div><label>Password</label><input id="passwordSignIn" type="password" placeholder="••••••••"></div></div>
+      <div class="actions" style="margin-top:10px">
+        <button id="btnSignIn" class="primary">Sign In</button>
+        <a id="linkToSignUp">Create account</a>
+      </div>
+      <div class="actions" style="margin-top:6px">
+        <a id="linkResend">Resend confirmation email</a>
+      </div>
+      <div class="hr"></div>
+      <div class="muted">Or use the Email OTP tab (magic link).</div>
+    </div>
+
+    <!-- Create Account -->
+    <div id="signUpTab" class="hidden">
+      <div class="row"><div><label>Email</label><input id="emailSignUp" type="email" placeholder="you@example.com"></div></div>
+      <div class="row"><div><label>Password</label><input id="passwordSignUp" type="password" placeholder="Min 6 characters"></div></div>
+      <div class="row"><div><label>Confirm Password</label><input id="passwordConfirm" type="password" placeholder="Repeat password"></div></div>
+      <div class="actions" style="margin-top:10px">
+        <button id="btnSignUp" class="primary">Create Account</button>
+        <a id="linkToSignIn">Back to sign in</a>
+      </div>
+      <div class="hr"></div>
+      <div class="muted">Depending on your settings, you may need to confirm your email.</div>
+    </div>
+
+    <!-- Email OTP (magic link) -->
+    <div id="emailOtpTab" class="hidden">
+      <div class="row"><div><label>Email</label><input id="emailOtp" type="email" placeholder="you@example.com"></div></div>
+      <div class="actions" style="margin-top:10px">
+        <button id="sendEmailOtp" class="primary">Send Magic Link</button>
+      </div>
+      <div class="hr"></div>
+      <div class="muted">Make sure your Supabase **Redirect URLs** include your dev URL and GitHub Pages URL.</div>
+    </div>
+  </div>
+
+  <!-- APP PANEL -->
+  <div id="appPanel" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin:0 0 10px">Add / Edit</h3>
+        <div class="row"><div><label>Title</label><input id="title" placeholder="What needs to be done?"></div></div>
+        <div class="row"><div><label>Notes</label><textarea id="notes" placeholder="Details (optional)"></textarea></div></div>
+        <div class="row">
+          <div><label>Date</label><input id="date" type="date"></div>
+          <div><label>Start</label><input id="startTime" type="time"></div>
+          <div><label>End (optional)</label><input id="endTime" type="time"></div>
+        </div>
+        <div class="row">
+          <div><label>Priority</label>
+            <select id="priority">
+              <option value="most_important">Most important</option>
+              <option value="important">Important</option>
+              <option value="normal" selected>Normal</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:12px">
+          <button id="saveBtn" class="primary">Save</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+          <button id="deleteBtn" class="danger hidden">Delete</button>
+        </div>
+        <div class="hr"></div>
+        <div id="hint" class="muted">Creating new to-do…</div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="align-items:center">
+          <div><label>Viewing date</label><input id="viewDate" type="date"></div>
+          <div class="actions" style="justify-content:flex-end">
+            <button id="prevDay" class="ghost">← Prev</button>
+            <button id="nextDay" class="ghost">Next →</button>
+            <button id="signOut" class="ghost">Sign out</button>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
