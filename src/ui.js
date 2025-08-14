@@ -11,18 +11,43 @@ function setBadge(el, s){
   else { el.textContent="Error"; el?.classList?.add("err"); }
 }
 
+// current local time "HH:MM"
+function nowTimeStr(){
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  return `${h}:${m}`;
+}
+
+// return true if the item should be read-only (started or in the past)
+function isReadOnlyByDateTime(dateYmd, startTime){
+  const today = todayStr();
+  if (dateYmd < today) return true;
+  if (dateYmd > today) return false;
+  const st = (startTime || '').slice(0,5); // "HH:MM"
+  if (!st) return false; // we require start time, but guard anyway
+  return st <= nowTimeStr(); // started or past -> lock
+}
+
 let editingId = null;
+let editingDateYmd = null;
+let editingStartHHMM = null;
 
 export function initAppUI(){
   const t = todayStr();
+
+  // Add/Edit form defaults; cannot pick past dates
   $("date").value = t;
+  $("date").min   = t;
+
+  // Search date-wise: allow viewing ANY date
   $("viewDate").value = t;
 
-  $("saveBtn").onclick = onSave;
-  $("resetBtn").onclick = resetForm;
+  $("saveBtn").onclick   = onSave;
+  $("resetBtn").onclick  = resetForm;
   $("deleteBtn").onclick = onDelete;
 
-  // Auto refresh list whenever the date changes
+  // Auto refresh list whenever the search date changes
   $("viewDate").onchange = renderList;
 }
 
@@ -33,29 +58,54 @@ export async function renderList(){
     const theDate = $("viewDate").value;
     const items = await listTodosByDate(theDate);
     setBadge(statusDb, true);
+
     if (!items.length){
       listEl.innerHTML = `<div class="muted">No to-dos scheduled for <b>${theDate}</b>.</div>`;
       return;
     }
+
     listEl.innerHTML = "";
+    const today = todayStr();
+    const nowHHMM = nowTimeStr();
+
     for (const t of items){
-      const timeText = t.start_time ? t.start_time.slice(0,5) + (t.end_time ? "–" + t.end_time.slice(0,5) : "") : "";
-      const div = document.createElement("div"); div.className = "todo";
+      const locked = isReadOnlyByDateTime(t.date_ymd, t.start_time);
+      const timeText = t.start_time
+        ? t.start_time.slice(0,5) + (t.end_time ? "–" + t.end_time.slice(0,5) : "")
+        : "";
+
+      const lockLabel =
+        (t.date_ymd < today) ? "Read-only (past day)" :
+        (t.date_ymd === today && (t.start_time||'').slice(0,5) <= nowHHMM) ? "Read-only (already started)" :
+        "";
+
+      const div = document.createElement("div");
+      div.className = "todo";
       div.innerHTML = `
         <div>
           <div class="title">${escapeHtml(t.title)}</div>
-          <div class="meta">${timeText} · ${t.date_ymd}${t.notes ? " · " + escapeHtml(t.notes) : ""}</div>
+          <div class="meta">
+            ${timeText ? timeText + " · " : ""}${t.date_ymd}
+            ${t.notes ? " · " + escapeHtml(t.notes) : ""}
+            ${locked ? ' · <span class="chip">'+lockLabel+'</span>' : ""}
+          </div>
           <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
             <span class="chip">${NUM_TO_PRIORITY_LABEL(t.priority)}</span>
           </div>
         </div>
-        <div class="actions" style="margin-left:auto">
-          <button class="ghost">Edit</button>
-          <button class="danger">Delete</button>
-        </div>`;
-      const [btnEdit, btnDel] = div.querySelectorAll("button");
-      btnEdit.onclick = ()=>beginEdit(t);
-      btnDel.onclick  = ()=>{ editingId = t.id; onDelete(); };
+        ${locked ? "" : `
+          <div class="actions" style="margin-left:auto">
+            <button class="ghost">Edit</button>
+            <button class="danger">Delete</button>
+          </div>`}
+      `;
+
+      if (!locked){
+        const [btnEdit, btnDel] = div.querySelectorAll("button");
+        btnEdit.onclick = ()=>beginEdit(t);
+        btnDel.onclick  = ()=>{ editingId = t.id; editingDateYmd = t.date_ymd; editingStartHHMM = (t.start_time||'').slice(0,5); onDelete(); };
+      }
+
       listEl.appendChild(div);
     }
   } catch (e) {
@@ -73,6 +123,30 @@ async function onSave(){
   if (!start) return alert("Start time required");
   const priority = PRIORITY_TO_NUM($("priority").value);
 
+  const today = todayStr();
+  const nowHHMM = nowTimeStr();
+
+  // ⛔ Block creating/updating in the past, and for today if start <= now
+  if (date < today){
+    alert("You can’t schedule a task on a past date.");
+    return;
+  }
+  if (date === today && start.slice(0,5) <= nowHHMM){
+    alert("Start time must be later than the current time.");
+    return;
+  }
+
+  // Extra guard: if editing an already-started (or past) task, do not allow update
+  if (editingId){
+    const wasLocked = isReadOnlyByDateTime(editingDateYmd, editingStartHHMM);
+    if (wasLocked){
+      alert("This task has already started (or is in the past) and cannot be modified.");
+      resetForm();
+      await renderList();
+      return;
+    }
+  }
+
   const payload = { title, notes: $("notes").value || null, date_ymd: date, start_time: start, end_time: end, priority };
   setBadge(statusDb,"warn"); statusMsg.textContent = "Saving…";
   try {
@@ -81,7 +155,7 @@ async function onSave(){
 
     setBadge(statusDb,true); statusMsg.textContent = "Saved.";
 
-    // ⬇️ Jump the list to the saved to-do's date, then render
+    // Show the saved date in the right panel
     $("viewDate").value = date;
     await renderList();
 
@@ -93,9 +167,15 @@ async function onSave(){
 
 function resetForm(){
   editingId = null;
+  editingDateYmd = null;
+  editingStartHHMM = null;
+
+  const t = $("viewDate").value || todayStr();
+  const today = todayStr();
   $("title").value = "";
   $("notes").value = "";
-  $("date").value = $("viewDate").value; // keep form in sync with current search date
+  $("date").value = (t < today) ? today : t; // if viewing past day, reset form to today
+  $("date").min   = today;
   $("startTime").value = "";
   $("endTime").value = "";
   $("priority").value = "normal";
@@ -105,10 +185,22 @@ function resetForm(){
 }
 
 function beginEdit(t){
+  // Block editing for past/started items
+  if (isReadOnlyByDateTime(t.date_ymd, t.start_time)){
+    alert("This task has already started (or is in the past) and cannot be edited.");
+    return;
+  }
+
   editingId = t.id;
+  editingDateYmd = t.date_ymd;
+  editingStartHHMM = (t.start_time||'').slice(0,5);
+
+  const today = todayStr();
+
   $("title").value = t.title;
   $("notes").value = t.notes || "";
   $("date").value  = t.date_ymd;
+  $("date").min    = today; // cannot move earlier than today
   $("startTime").value = t.start_time ? t.start_time.slice(0,5) : "";
   $("endTime").value   = t.end_time ? t.end_time.slice(0,5) : "";
   $("priority").value  = (t.priority<=1) ? "most_important" : (t.priority===2 ? "important" : "normal");
@@ -119,7 +211,16 @@ function beginEdit(t){
 
 async function onDelete(){
   if (!editingId) return;
+
+  // Block deleting for past/started items
+  if (isReadOnlyByDateTime(editingDateYmd, editingStartHHMM)){
+    alert("This task has already started (or is in the past) and cannot be deleted.");
+    resetForm();
+    return;
+  }
+
   if (!confirm("Delete this to-do?")) return;
+
   setBadge(statusDb,"warn"); statusMsg.textContent="Deleting…";
   try {
     await softDeleteTodo(editingId);
