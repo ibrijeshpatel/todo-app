@@ -23,46 +23,55 @@ export function initAuthUI(){
   $("linkToSignIn").onclick=()=>tabs[0].click();
 
   // Sign in (email + password)
-  $("btnSignIn").onclick = async ()=>{
-    setBadge(statusAuth,"warn"); statusMsg.textContent="Signing in…";
-    const email = $("emailSignIn").value.trim();
-    const password = $("passwordSignIn").value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error){ setBadge(statusAuth,false); statusMsg.textContent="Sign-in error: "+error.message; alert(error.message); }
-  };
+$("btnSignIn").onclick = async () => {
+  setBadge(statusAuth, "warn"); statusMsg.textContent = "Signing in…";
+  const email = $("emailSignIn").value.trim();
+  const password = $("passwordSignIn").value;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    setBadge(statusAuth, false);
+    statusMsg.textContent = "Sign-in error: " + error.message;
+    alert(error.message);
+  }
+};
 
-  // Sign up (handles both: confirm-email OFF -> auto signed in; ON -> needs email)
-  $("btnSignUp").onclick = async ()=>{
-    setBadge(statusAuth,"warn"); statusMsg.textContent="Creating account…";
-    const email=$("emailSignUp").value.trim();
-    const pw=$("passwordSignUp").value;
-    const pw2=$("passwordConfirm").value;
-    if(!email||!pw) return alert("Email and password are required.");
-    if(pw!==pw2) return alert("Passwords do not match.");
 
-    const { data, error } = await supabase.auth.signUp({ email, password: pw });
+  // Sign up (auto-login when confirmations are OFF)
+$("btnSignUp").onclick = async () => {
+  setBadge(statusAuth, "warn"); statusMsg.textContent = "Creating account…";
+  const email = $("emailSignUp").value.trim();
+  const pw    = $("passwordSignUp").value;
+  const pw2   = $("passwordConfirm").value;
+  if (!email || !pw)   return alert("Email and password are required.");
+  if (pw !== pw2)      return alert("Passwords do not match.");
 
-    if (error){
-      setBadge(statusAuth,false);
-      statusMsg.textContent="Sign-up error: "+error.message;
-      alert(error.message);
-      return;
-    }
+  const { data, error } = await supabase.auth.signUp({ email, password: pw });
+  if (error) {
+    setBadge(statusAuth,false);
+    statusMsg.textContent = "Sign-up error: " + error.message;
+    alert(error.message);
+    return;
+  }
 
-    // If confirmations are OFF, Supabase returns a session and you're already logged in.
-    if (data?.session) {
-      setBadge(statusAuth,true);
-      statusMsg.textContent = "Account created — you're signed in.";
-      // onAuthStateChange will switch the UI to the app panel automatically.
-      alert("Account created — you're signed in.");
-    } else {
-      // If confirmations are ON (or SMTP delayed), user must confirm via email first.
-      setBadge(statusAuth,true);
-      statusMsg.textContent = "Account created. Check your email to confirm, then sign in.";
-      alert("Account created. Check your email to confirm, then sign in.");
-      tabs[0].click(); // go to Sign In tab
-    }
-  };
+  let autoSignedIn = !!data?.session;
+  if (!autoSignedIn) {
+    // If confirmations are OFF but session wasn't returned, try to sign in right away
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pw });
+    autoSignedIn = !signInErr;
+  }
+
+  if (autoSignedIn) {
+    setBadge(statusAuth,true);
+    statusMsg.textContent = "Account created — you're signed in.";
+    alert("Account created — you're signed in.");
+    // onAuthStateChange will switch UI to the app automatically
+  } else {
+    setBadge(statusAuth,true);
+    statusMsg.textContent = "Account created. Check your email to confirm, then sign in.";
+    alert("Account created. Check your email to confirm, then sign in.");
+    tabs[0].click(); // go to Sign In tab
+  }
+};
 
   // Magic link (Email OTP)
   $("sendEmailOtp").onclick = async ()=>{
