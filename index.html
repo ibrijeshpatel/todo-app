@@ -32,7 +32,7 @@
   <div id="authPanel" class="card auth">
     <div class="tabs">
       <button class="ghost active" data-tab="signInTab">Sign In</button>
-      <button class="ghost" data-tab="signUpTab">Create Account</</button>
+      <button class="ghost" data-tab="signUpTab">Create Account</button>
       <button class="ghost" data-tab="emailOtpTab">Email OTP</button>
     </div>
 
@@ -71,7 +71,7 @@
         <button id="sendEmailOtp" class="primary">Send Magic Link</button>
       </div>
       <div class="hr"></div>
-      <div class="muted">Make sure your Supabase **Redirect URLs** include your dev URL and GitHub Pages URL.</div>
+      <div class="muted">Make sure Supabase Redirect URLs include this page URL.</div>
     </div>
   </div>
 
@@ -107,10 +107,9 @@
 
       <div class="card">
         <div class="row" style="align-items:center">
-          <div><label>Viewing date</label><input id="viewDate" type="date"></div>
+          <div><label>Select date</label><input id="viewDate" type="date"></div>
           <div class="actions" style="justify-content:flex-end">
-            <button id="prevDay" class="ghost">← Prev</button>
-            <button id="nextDay" class="ghost">Next →</button>
+            <button id="showDay" class="primary">Check day</button>
             <button id="signOut" class="ghost">Sign out</button>
           </div>
         </div>
@@ -121,8 +120,7 @@
   </div>
 </div>
 
-<!-- <script type="module" src="./src/main.js"></script> -->
-<script type="module" src="./src/main.js?v=3"></script>
-
+<!-- bump ?v= to force cache refresh after updates -->
+<script type="module" src="./src/main.js?v=7"></script>
 </body>
 </html>

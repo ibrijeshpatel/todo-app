@@ -14,7 +14,7 @@ function setBadge(el, s){
 let editingId = null;
 
 export function initAppUI(){
-  const t=todayStr();
+  const t = todayStr();
   $("date").value = t;
   $("viewDate").value = t;
 
@@ -22,18 +22,9 @@ export function initAppUI(){
   $("resetBtn").onclick = resetForm;
   $("deleteBtn").onclick = onDelete;
 
-  $("prevDay").onclick = ()=>shiftViewDate(-1);
-  $("nextDay").onclick = ()=>shiftViewDate(1);
+  // NEW controls: select date + "Check day"
+  $("showDay").onclick = renderList;
   $("viewDate").onchange = renderList;
-}
-
-function shiftViewDate(delta){
-  const viewDateEl = $("viewDate");
-  const d = new Date(viewDateEl.value);
-  d.setDate(d.getDate()+delta);
-  const z = new Date(d.getTime()-d.getTimezoneOffset()*60000);
-  viewDateEl.value = z.toISOString().slice(0,10);
-  renderList();
 }
 
 export async function renderList(){
