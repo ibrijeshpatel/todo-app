@@ -30,10 +30,11 @@ export async function renderList(){
   const listEl = $("list");
   listEl.innerHTML = `<div class="muted">Loading…</div>`;
   try {
-    const items = await listTodosByDate($("viewDate").value);
+    const theDate = $("viewDate").value;
+    const items = await listTodosByDate(theDate);
     setBadge(statusDb, true);
     if (!items.length){
-      listEl.innerHTML = `<div class="muted">No to-dos for the selected date.</div>`;
+      listEl.innerHTML = `<div class="muted">No to-dos scheduled for <b>${theDate}</b>.</div>`;
       return;
     }
     listEl.innerHTML = "";
@@ -77,8 +78,13 @@ async function onSave(){
   try {
     if (editingId) await updateTodo(editingId, payload);
     else await addTodo(payload);
+
     setBadge(statusDb,true); statusMsg.textContent = "Saved.";
+
+    // ⬇️ Jump the list to the saved to-do's date, then render
+    $("viewDate").value = date;
     await renderList();
+
     resetForm();
   } catch (e) {
     setBadge(statusDb,false); statusMsg.textContent = "Save failed: " + e.message; alert("Save failed: " + e.message);
@@ -89,7 +95,7 @@ function resetForm(){
   editingId = null;
   $("title").value = "";
   $("notes").value = "";
-  $("date").value = $("viewDate").value;
+  $("date").value = $("viewDate").value; // keep form in sync with current search date
   $("startTime").value = "";
   $("endTime").value = "";
   $("priority").value = "normal";

@@ -34,3 +34,16 @@ button.danger{background:var(--danger)}
 .tabs button{padding:8px 10px;border-radius:999px}
 .tabs .active{background:#0b1220;border:1px solid var(--border)}
 .auth{max-width:560px;margin:28px auto}
+
+/* centered search date */
+.searchbar{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  text-align:center;
+  padding:4px 0;
+}
+.searchbar input[type="date"]{
+  max-width:240px;
+}
